@@ -78,6 +78,7 @@ class Vector2D {
 		return new Vector2D(other.x - this.x, other.y - this.y);
 	}
 	
+	// Returns the vector anti-parallel to this with the same magnitude
 	Vector2D opposite() {
 		return this.scaleVector(-1.0);
 	}
@@ -87,6 +88,7 @@ class Vector2D {
 		return new Vector2D(this.x * scaling, this.y * scaling);
 	}
 
+	// Normalizes this point to the given position and orientation
 	Vector2D normalize(Vector2D normalPosition, double normalOrientation) {
 		return normalPosition.displacementTo(this).rotateBy(normalOrientation);
 	}
@@ -106,13 +108,6 @@ class Vector2D {
 		}
 	}
 	
-	Vector2D reflect(Vector2D normalVector) {
-		if(this.angleDifference(normalVector) > 90.0) {
-			throw new RuntimeException("Cannot reflect more than 90 degrees");
-		}
-		return this.opposite().rotateBy(2 * this.angleDifference(normalVector)).opposite();
-	}
-	
 	// Returns the pythagorean sum of the components of this vector
 	double magnitude() {
 		return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
@@ -123,6 +118,7 @@ class Vector2D {
 		return Angle.toDegrees(Math.atan2(this.y, this.x));
 	}
 	
+	// Returns the clockwise angle from this to other
 	double angleDifference(Vector2D other) {
 		return this.angle() - other.angle();
 	}
