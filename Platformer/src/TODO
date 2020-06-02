@@ -1,0 +1,45 @@
+Controls: 
+	Up/Down to interact with background (ladders, vines, through doors)
+	Down to Crouch (make sure there is space to un-crouch)
+	Mouse Move to indicate facing
+	Click activates current weapon
+	Number Keys to switch active weapon
+	
+Player:
+	List of Weapons and Indicator on Screen
+	Health indicator on screen
+	Temporary immunity on taking damage
+	Direction facing
+	
+Basic Environment:
+	Damaging Components (Spike)
+	Moving platforms
+	Doors Ladders
+	
+Weapons/Items:
+	Instant healing
+	Potion (carry-able healing)
+	Melee:
+		Knife
+		Spear
+	Ranged:
+		Boomerang
+		Sling-shot
+		Pistol
+	Ammunition
+
+Enemies:
+	Thugs (with knife, take damage if touched)
+	Sentry Turret (stationary, one direction)
+	Rotating Turret (in wall or ceiling, follows player)
+	Pistol Enemies
+	Sling-shot enemies
+	
+Code and Interfacing:
+	A tickable interface
+	Figure out how weapons implement IGameComponents or not
+	
+	
+	
+
+	

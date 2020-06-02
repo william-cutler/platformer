@@ -32,8 +32,12 @@ interface IGameComponent {
 abstract class AGameComponent implements IGameComponent {
 	Rectangle body;
 
+	AGameComponent(Rectangle body) {
+		this.body = body;
+	}
+	
 	AGameComponent(Vector2D topLeft, Vector2D dimensions) {
-		this.body = new Rectangle(topLeft, dimensions);
+		this(new Rectangle(topLeft, dimensions));
 	}
 
 	// Draws this at the proper position onto the background
@@ -140,5 +144,38 @@ class Util {
 			}
 		}
 		return min;
+	}
+	
+	<T> ArrayList<T> filterOut(ArrayList<T> al, IPred<T> pred) {
+		ArrayList<T> result = new ArrayList<T>();
+		for(T item : al) {
+			if(! pred.apply(item)) {
+				result.add(item);
+			}
+		}
+		return result;
+	}
+}
+
+
+class TimeTemporary {
+	private final int ticksLeft;
+	
+	TimeTemporary(int ticksLeft) {
+		if(ticksLeft < 0) {
+			throw new IllegalArgumentException("Ticks given must be positive.");
+		}
+		this.ticksLeft = ticksLeft;
+	}
+	
+	TimeTemporary onTick() {
+		if(this.ticksLeft <= 0) {
+			throw new RuntimeException("Cannot tick past maximum.");
+		}
+		return new TimeTemporary(this.ticksLeft - 1);
+	}
+	
+	boolean finished() {
+		return this.ticksLeft == 0;
 	}
 }

@@ -35,6 +35,8 @@ interface ICollisionBody {
 	
 	// Returns the vector that THIS would have to move to resolve collision with the given rectangle
 	Vector2D resolveCollisionRect(Rectangle other);
+	
+	Vector2D center();
 }
 
 // To represent a collision body with a definite position
@@ -95,6 +97,10 @@ class Point extends ACollisionBody {
 	public Vector2D resolveCollisionRect(Rectangle other) {
 		return other.resolveCollisionPoint(this.topLeft).opposite();
 	}
+	
+	public Vector2D center() {
+		return this.topLeft;
+	}
 }
 // To represent a rectangle on the plane with dimensions, a position, and an orientation
 class Rectangle extends ACollisionBody {
@@ -114,6 +120,7 @@ class Rectangle extends ACollisionBody {
 	Vector2D topRight() {return this.topLeft.addToX(this.dimensions.x);}
 	Vector2D botLeft() {return this.topLeft.addToY(this.dimensions.y);}
 	Vector2D botRight() {return this.topLeft.addVectors(this.dimensions);}
+	public Vector2D center() {return this.topLeft.addVectors(this.dimensions.scaleVector(.5));}
 	
 	// Returns the dimensions of this rectangle as width * height
 	Vector2D getDimensions() {return this.dimensions;}
@@ -222,7 +229,7 @@ class Rectangle extends ACollisionBody {
 			return (u.inclusiveBetween(this.topLeft.y, other.topLeft().y, this.topRight().y))
 			|| u.inclusiveBetween(this.topLeft.y, other.topRight().y, this.topRight().y);
 		}
-	}	
+	}
 }
 
 interface IFunc<A, R> {

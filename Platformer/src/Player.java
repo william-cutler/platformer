@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.util.ArrayList;
 
 import javalib.impworld.WorldScene;
 import javalib.worldimages.OutlineMode;
@@ -21,18 +22,24 @@ class Player extends AGameComponent {
 
 	Health health;
 	Vector2D velocity; // Pixels per tick
+	Weaponry weapons;
 
 	// Constructor initializes this with the given top-left, constant dimensions, 3 health, and 0 velocity
 	Player(Vector2D topLeft) {
 		super(topLeft, Player.DIM);
 		this.health = new Health(3);
 		this.velocity = Vector2D.ZERO;
+		this.weapons = new Weaponry();
 	}
+	
+	//VISUALIZATIONS
 
 	// Draws the player as a blue rectangle
 	WorldImage render() {
 		return new VisiblePinholeImage(this.body.render(Color.BLUE));
 	}
+	
+	//MOVEMENT
 
 	// Stops movement in the 'x' direction
 	void haltX() {
@@ -82,6 +89,24 @@ class Player extends AGameComponent {
 				throw new RuntimeException("Collision resolution incorrectly calculated.");
 			}
 		}
+	}
+
+	//WEAPONS
+	// Switches weapons to the one corresponding to position in inventory
+	// EFFECT: Modifies this' Weaponry active weapon
+	void switchWeapon(int next) {
+		this.weapons.changeWeaponTo(next);
+	}
+	
+	// Creates weapon effects due to firing weapon at the target
+	// EFFECT: Modifies the active weapon on firing
+	ArrayList<IWeaponEffect> fireCurrentWeapon(Vector2D target) {
+		return this.weapons.currentWeapon().fire(this.body.center(), 
+				this.body.center().displacementTo(target));
+	}
+	
+	void tickWeapons() {
+		this.weapons.tickWeaponry();
 	}
 }
 

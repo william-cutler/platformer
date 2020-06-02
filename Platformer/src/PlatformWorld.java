@@ -1,5 +1,6 @@
 import javalib.impworld.World;
 import javalib.impworld.WorldScene;
+import javalib.worldimages.Posn;
 
 // To handle player interactions with the game and provide visualization
 class PlatformWorld extends World {
@@ -26,6 +27,8 @@ class PlatformWorld extends World {
 			this.game.playerMoveX(key.equals("d"));
 		} else if(key.equals(" ")) {
 			this.game.playerJump();
+		} else if(key.matches("[0-9]+")) {
+			this.game.playerSwitchWeapon(Integer.parseInt(key));
 		}
 	}
 	
@@ -41,6 +44,15 @@ class PlatformWorld extends World {
 	// EFFECT: Modifies game components in PlatformGame
 	public void onTick() {
 		this.game.tickPlayer();
+		this.game.tickWeaponEffects();
+	}
+	
+	// Causes the player to fire current weapon in click direction
+	// EFFECT: Modifies the WeaponEffects in PlatformGame
+	public void onMousePressed(Posn pos, String buttonName) {
+		if(buttonName.equals("LeftButton")) {
+			this.game.playerFireAt(new Vector2D(pos));
+		}
 	}
 
 }

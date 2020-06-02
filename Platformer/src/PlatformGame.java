@@ -6,9 +6,11 @@ import javalib.worldimages.Posn;
 class PlatformGame {
 	Player player;
 	ArrayList<GroundBlock> ground;
+	ArrayList<IWeaponEffect> weaponEffects;
 	
 	PlatformGame() {
 		this.player = new Player(new Vector2D(10, 350));
+		
 		ground = new ArrayList<>();
 		for(int i = 0; i < 100; i += 1) {
 			ground.add(new GroundBlock(new Posn(i, 60)));
@@ -25,7 +27,8 @@ class PlatformGame {
 		ground.add(new GroundBlock(new Posn(35, 37)));
 		ground.add(new GroundBlock(new Posn(38, 43)));
 		ground.add(new GroundBlock(new Posn(43, 47)));
-
+		
+		this.weaponEffects = new ArrayList<>();
 	}
 	
 	// Draws the current state of the game onto the background
@@ -41,6 +44,7 @@ class PlatformGame {
 		ArrayList<IGameComponent> igc = new ArrayList<>();
 		igc.add(this.player);
 		igc.addAll(this.ground);
+		igc.addAll(this.weaponEffects);
 		return igc;
 	}
 	
@@ -70,8 +74,28 @@ class PlatformGame {
 	// EFFECT: Modifies the player
 	void tickPlayer() {
 		this.player.moveOnTick();
+		this.player.tickWeapons();
 		for(IGameComponent igc : this.gameComponents()) {
 			igc.modifyPlayer(this.player);
+		}
+	}
+	
+	// Causes the player to fire at the target
+	// EFFECT: Modifies this' list of WeaponEffects and weapon itself on firing
+	void playerFireAt(Vector2D target) {
+		this.weaponEffects.addAll(this.player.fireCurrentWeapon(target));
+	}
+	
+	// Causes the player to switch current weapon based on given key input
+	// EFFECT: Modifies active weapon in Player's Weaponry
+	void playerSwitchWeapon(int next) {
+		this.player.switchWeapon(next);
+	}
+	
+	void tickWeaponEffects() {
+		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.finished());
+		for (IWeaponEffect iwe : this.weaponEffects) {
+			iwe.tickWeapon();
 		}
 	}
 }
