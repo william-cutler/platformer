@@ -37,6 +37,7 @@ class PlatformGame {
 		for(IGameComponent igc : this.gameComponents()) {
 			igc.drawOnto(background);
 		}
+		this.player.drawHUD(background);
 	}
 	
 	// Returns a list of all game components in play
@@ -92,6 +93,8 @@ class PlatformGame {
 		this.player.switchWeapon(next);
 	}
 	
+	// Causes weapon effects such as bullets, melee swings, etc to move/tick
+	// EFFECT: Removes weapon effects that are no longer in play and ticks those remaining
 	void tickWeaponEffects() {
 		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.finished());
 		for (IWeaponEffect iwe : this.weaponEffects) {

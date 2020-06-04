@@ -3,6 +3,7 @@ import java.util.ArrayList;
 
 import javalib.impworld.WorldScene;
 import javalib.worldimages.OutlineMode;
+import javalib.worldimages.OverlayImage;
 import javalib.worldimages.Posn;
 import javalib.worldimages.RectangleImage;
 import javalib.worldimages.WorldImage;
@@ -15,13 +16,19 @@ interface IConstant {
 	double GRAVITY = 100 * TICK_RATE * TICK_RATE * BLOCK_SIZE; // In (blocks per second) per second
 	Vector2D BLOCK_DIM = new Vector2D(BLOCK_SIZE, BLOCK_SIZE);
 	double COL_TOL = .001 * BLOCK_SIZE; // Small number in pixels used for collision tolerances
+	
+	
+}
+
+// To represent something visible on the screen
+interface IDrawable {
+	// Draw a visual representation of this at a particular position onto the background
+	void drawOnto(WorldScene background);
 }
 
 // A component of the game that affects the other game components, 
 // handles collisions, and is visible on screen
-interface IGameComponent {
-	// Draw a visual representation of this at a particular position onto the background
-	void drawOnto(WorldScene background);
+interface IGameComponent extends IDrawable {
 	// Modify the given player if an interaction occurs
 	void modifyPlayer(Player pl);
 	// The structure used for detecting and handling collisions
@@ -36,6 +43,7 @@ abstract class AGameComponent implements IGameComponent {
 		this.body = body;
 	}
 	
+	// Constructor initializes this with a Rectangle body from the given parameters
 	AGameComponent(Vector2D topLeft, Vector2D dimensions) {
 		this(new Rectangle(topLeft, dimensions));
 	}
@@ -65,6 +73,7 @@ abstract class AGameComponent implements IGameComponent {
 // A single block that blocks movement in all directions
 class GroundBlock extends AGameComponent {
 
+	// Intializes this as a block at the given block position with standard block dimensions
 	GroundBlock(Posn blockPosition) {
 		super(new Util().topLFromBlock(blockPosition), IConstant.BLOCK_DIM);
 	}
@@ -97,6 +106,20 @@ class ImgUtil {
 	// Draws a square of constant size, solid fill of given color
 	WorldImage drawBlock(Color c) {
 		return new RectangleImage(IConstant.BLOCK_SIZE, IConstant.BLOCK_SIZE, OutlineMode.SOLID, c);
+	}
+	
+	// Returns an image of an inventory box to display a weapon for HUD that scales with block size
+	WorldImage drawInventoryBox() {
+		return new OverlayImage(new RectangleImage(IConstant.BLOCK_SIZE * 3 - 3, 
+				IConstant.BLOCK_SIZE * 3 - 3, 
+				OutlineMode.SOLID, Color.WHITE), new RectangleImage(IConstant.BLOCK_SIZE * 3, 
+						IConstant.BLOCK_SIZE * 3, OutlineMode.SOLID, Color.BLACK));
+	}
+	
+	// Returns an orange square that fits under an inventory box to indicate the active weapon
+	WorldImage drawActiveWeaponHighlight() {
+		return  new RectangleImage(IConstant.BLOCK_SIZE * 3 + 2, 
+				IConstant.BLOCK_SIZE * 3 + 2, OutlineMode.SOLID, Color.ORANGE);
 	}
 }
 
@@ -146,6 +169,7 @@ class Util {
 		return min;
 	}
 	
+	// Returns a new list without any elements that satisfy the given predicate
 	<T> ArrayList<T> filterOut(ArrayList<T> al, IPred<T> pred) {
 		ArrayList<T> result = new ArrayList<T>();
 		for(T item : al) {
@@ -157,7 +181,7 @@ class Util {
 	}
 }
 
-
+// A count-down clock that decrements up to a given amount
 class TimeTemporary {
 	private final int ticksLeft;
 	
@@ -168,6 +192,7 @@ class TimeTemporary {
 		this.ticksLeft = ticksLeft;
 	}
 	
+	// Returns new TimeTemporary with one less tick left, assuming there are any
 	TimeTemporary onTick() {
 		if(this.ticksLeft <= 0) {
 			throw new RuntimeException("Cannot tick past maximum.");
@@ -175,6 +200,7 @@ class TimeTemporary {
 		return new TimeTemporary(this.ticksLeft - 1);
 	}
 	
+	// Are there zero ticks left?
 	boolean finished() {
 		return this.ticksLeft == 0;
 	}

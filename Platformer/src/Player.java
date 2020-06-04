@@ -8,6 +8,7 @@ import javalib.worldimages.RectangleImage;
 import javalib.worldimages.VisiblePinholeImage;
 import javalib.worldimages.WorldImage;
 
+// To represent the player character controlled by the used with health, weapons, and feelings (not really)
 class Player extends AGameComponent {
 	static final int WIDTH = 2; // In blocks
 	static final int HEIGHT = 3; // In blocks
@@ -37,6 +38,11 @@ class Player extends AGameComponent {
 	// Draws the player as a blue rectangle
 	WorldImage render() {
 		return new VisiblePinholeImage(this.body.render(Color.BLUE));
+	}
+	
+	// Draws non-game component aspects of this player such as health, inventory, and weapons
+	void drawHUD(WorldScene background) {
+		this.weapons.drawOnto(background);
 	}
 	
 	//MOVEMENT
@@ -105,6 +111,8 @@ class Player extends AGameComponent {
 				this.body.center().displacementTo(target));
 	}
 	
+	// Ticks weapons for purposes like refreshes/reloading
+	// EFFECT: Modifies weapons in this' weaponry
 	void tickWeapons() {
 		this.weapons.tickWeaponry();
 	}

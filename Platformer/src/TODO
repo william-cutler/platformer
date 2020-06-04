@@ -39,6 +39,9 @@ Code and Interfacing:
 	A tickable interface
 	Figure out how weapons implement IGameComponents or not
 	
+Display:
+	Text showing inventory position
+	
 	
 	
 
