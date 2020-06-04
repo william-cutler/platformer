@@ -2,12 +2,12 @@ Controls:
 	Up/Down to interact with background (ladders, vines, through doors)
 	Down to Crouch (make sure there is space to un-crouch)
 	Mouse Move to indicate facing
-	Click activates current weapon
-	Number Keys to switch active weapon
+	**Click activates current weapon**
+	**Number Keys to switch active weapon**
 	
 Player:
 	List of Weapons and Indicator on Screen
-	Health indicator on screen
+	**Health indicator on screen**
 	Temporary immunity on taking damage
 	Direction facing
 	
@@ -20,7 +20,7 @@ Weapons/Items:
 	Instant healing
 	Potion (carry-able healing)
 	Melee:
-		Knife
+		**Knife**
 		Spear
 	Ranged:
 		Boomerang

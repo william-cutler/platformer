@@ -2,6 +2,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 import javalib.impworld.WorldScene;
+import javalib.worldimages.BesideImage;
+import javalib.worldimages.EmptyImage;
 import javalib.worldimages.OutlineMode;
 import javalib.worldimages.Posn;
 import javalib.worldimages.RectangleImage;
@@ -43,6 +45,7 @@ class Player extends AGameComponent {
 	// Draws non-game component aspects of this player such as health, inventory, and weapons
 	void drawHUD(WorldScene background) {
 		this.weapons.drawOnto(background);
+		this.health.drawOnto(background);
 	}
 	
 	//MOVEMENT
@@ -118,7 +121,9 @@ class Player extends AGameComponent {
 	}
 }
 
+// The player's health bar, with a current health and maximum health
 class Health {
+	// Both are minimum 0, current <= max
 	int current;
 	int max;
 
@@ -130,7 +135,37 @@ class Health {
 		this.max = max;
 	}
 
+	// Constructor initializes this at full health
 	Health(int max) {
 		this(max, max);
+	}
+	
+	// Dead if current health is 0
+	boolean dead() {
+		return this.current == 0;
+	}
+	
+	// Returns Health with updated current that is still within bounds of [0, max]
+	Health changeCurrent(int change) {
+		int next = this.current + change;
+		next = Math.max(0, next);
+		next = Math.min(next, max);
+		return new Health(next, this.max);
+	}
+	
+	// Returns Health with updated max >= 0. Lowers current so it doesn't exceed max if necessary
+	Health changeMax(int change) {
+		int nextMax = this.max + change;
+		return new Health(Math.min(this.current, nextMax), Math.max(0, nextMax));
+	}
+	
+	// Draws this as a health bar at the top right of the scene, empty boxes indicate lost health from maximum
+	// EFFECT: Places image onto the given scene
+	void drawOnto(WorldScene background) {
+		WorldImage healthBar = new EmptyImage();
+		for(int hNum = 0; hNum < this.max; hNum += 1) {
+			healthBar = new BesideImage(healthBar, new ImgUtil().drawHealthBox(hNum < this.current));
+		}
+		background.placeImageXY(new ImgUtil().pinTopRightFromCenter(healthBar), (int) IConstant.WINDX, 0);
 	}
 }
