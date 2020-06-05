@@ -22,10 +22,12 @@ class Player extends AGameComponent {
 	= -40 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is blocks per second
 	static final double TERMINAL_SPEED 
 	= 100 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is blocks per second
+	static final int HIT_IMMUNITY = (int) (2 / IConstant.TICK_RATE);
 
 	Health health;
 	Vector2D velocity; // Pixels per tick
 	Weaponry weapons;
+	TimeTemporary hitImmunity;
 
 	// Constructor initializes this with the given top-left, constant dimensions, 3 health, and 0 velocity
 	Player(Vector2D topLeft) {
@@ -33,6 +35,7 @@ class Player extends AGameComponent {
 		this.health = new Health(3);
 		this.velocity = Vector2D.ZERO;
 		this.weapons = new Weaponry();
+		this.hitImmunity = new TimeTemporary(Player.HIT_IMMUNITY);
 	}
 	
 	//VISUALIZATIONS
@@ -67,7 +70,7 @@ class Player extends AGameComponent {
 
 	// Moves this player on tick according to its velocity, and adjusts velocity based on gravity
 	// EFFECT: Modifies this' collision body's position and this' velocity
-	void moveOnTick() {
+	private void moveOnTick() {
 		this.body = this.body.onMove(this.velocity);
 		double nextVY = this.velocity.y + IConstant.GRAVITY;
 		this.velocity = this.velocity.setY(Math.min(nextVY, Player.TERMINAL_SPEED));
@@ -113,11 +116,31 @@ class Player extends AGameComponent {
 		return this.weapons.currentWeapon().fire(this.body.center(), 
 				this.body.center().displacementTo(target));
 	}
-	
-	// Ticks weapons for purposes like refreshes/reloading
-	// EFFECT: Modifies weapons in this' weaponry
-	void tickWeapons() {
+
+	// The Player should never be removed
+	public boolean shouldRemove() {
+		return false;
+	}
+
+	// Updates player motion according to velocity and gravity, ticks inventory weapons, and ticks
+	// hit immunity if active
+	// EFFECT: Modifies this' position, velocity, weaponry, and hitImmunity
+	public void tick() {
+		this.moveOnTick();
 		this.weapons.tickWeaponry();
+		if(! this.hitImmunity.finished()) {
+			this.hitImmunity = this.hitImmunity.onTick();
+		}
+	}
+	
+	// Adjusts health upon taking damage if not hitImmune, and activates hitImmunity once hit
+	// EFFECT: Modifies this' health and hitImmunity
+	void onHit(int damage) {
+		if(damage < 0) {throw new IllegalArgumentException("Cannot take negative damage.");}
+		if(this.hitImmunity.finished()) {
+			this.health = this.health.changeCurrent(-1 * damage);
+			this.hitImmunity = new TimeTemporary(Player.HIT_IMMUNITY);
+		}
 	}
 }
 

@@ -45,6 +45,10 @@ class PlatformWorld extends World {
 	public void onTick() {
 		this.game.tickPlayer();
 		this.game.tickWeaponEffects();
+		this.game.tickEnemies();
+		this.game.weaponInteract();
+		this.game.enemiesInteractPlayer();
+		this.game.removeComponents();
 	}
 	
 	// Causes the player to fire current weapon in click direction

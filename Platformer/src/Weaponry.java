@@ -163,12 +163,8 @@ class NoWeapon implements IWeapon {
 }
 
 // To represent the physical effect of a weapon being activated
-interface IWeaponEffect extends IGameComponent {
-	// Is this effect completed and thus should be removed from play?
-	boolean finished();
-	
-	// Modifies this effect on a tick for movement/temporary effect purposes
-	void tickWeapon();
+interface IWeaponEffect extends IGameComponent {	
+	void interactEnemy(IEnemy ie);
 }
 
 // To represent the swing of a knife
@@ -187,7 +183,7 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 	}
 
 	// The knife-effect lasts as long as the given effect
-	public boolean finished() {
+	public boolean shouldRemove() {
 		return this.tt.finished();
 	}
 
@@ -198,7 +194,15 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 
 	// Ticks this time-temporary  so that it lasts for one less tick
 	// EFFECT: Effectively decrements this' TimeTemporary
-	public void tickWeapon() {
+	public void tick() {
 		this.tt = this.tt.onTick();
+	}
+	
+	// Reduces health of enemy by 1 if hit
+	// EFFECT: Modifies enemy according to health loss method
+	public void interactEnemy(IEnemy ie) {
+		if(this.body.collidingWith(ie.getCollisionBody())) {
+			ie.reduceHealth(1);
+		}
 	}
 }

@@ -48,6 +48,11 @@ class Vector2D {
 		return new Vector2D(this.x + other.x, this.y + other.y);
 	}
 	
+	// Scales this vector to have the given magnitude
+	Vector2D scaleTo(double magnitude) {
+		return this.getUnitVector().scaleVector(magnitude);
+	}
+	
 	// The result of component-wise scaling by the given scaling vector
 	Vector2D scaleByComponent(Vector2D scaling) {
 		return new Vector2D(this.x * scaling.x, this.y * scaling.y);

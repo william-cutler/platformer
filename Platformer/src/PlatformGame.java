@@ -7,6 +7,7 @@ class PlatformGame {
 	Player player;
 	ArrayList<GroundBlock> ground;
 	ArrayList<IWeaponEffect> weaponEffects;
+	ArrayList<IEnemy> enemies;
 	
 	PlatformGame() {
 		this.player = new Player(new Vector2D(10, 350));
@@ -29,6 +30,8 @@ class PlatformGame {
 		ground.add(new GroundBlock(new Posn(43, 47)));
 		
 		this.weaponEffects = new ArrayList<>();
+		this.enemies = new ArrayList<>();
+		this.enemies.add(new MeleeEnemy(new Posn(70, 57), new Posn(90, 57)));
 	}
 	
 	// Draws the current state of the game onto the background
@@ -46,8 +49,11 @@ class PlatformGame {
 		igc.add(this.player);
 		igc.addAll(this.ground);
 		igc.addAll(this.weaponEffects);
+		igc.addAll(this.enemies);
 		return igc;
 	}
+	
+	// PLAYER CONTROLS
 	
 	//Player controls
 	void haltPlayerX() {
@@ -71,35 +77,68 @@ class PlatformGame {
 		this.player.moveX(isRight);
 	}
 	
-	// Moves player on tick and then handles interactions between other game components and the player
-	// EFFECT: Modifies the player
-	void tickPlayer() {
-		this.player.moveOnTick();
-		this.player.tickWeapons();
-		for(IGameComponent igc : this.gameComponents()) {
-			igc.modifyPlayer(this.player);
-		}
-	}
-	
 	// Causes the player to fire at the target
 	// EFFECT: Modifies this' list of WeaponEffects and weapon itself on firing
 	void playerFireAt(Vector2D target) {
 		this.weaponEffects.addAll(this.player.fireCurrentWeapon(target));
 	}
-	
+
 	// Causes the player to switch current weapon based on given key input
 	// EFFECT: Modifies active weapon in Player's Weaponry
 	void playerSwitchWeapon(int next) {
 		this.player.switchWeapon(next);
 	}
 	
+	//TICKING AND INTERACTIONS
+	
+	// Moves player on tick and then handles interactions between other game components and the player
+	// EFFECT: Modifies the player
+	void tickPlayer() {
+		this.player.tick();
+		for(IGameComponent igc : this.gameComponents()) {
+			igc.interactPlayer(this.player);
+		}
+	}
+	
 	// Causes weapon effects such as bullets, melee swings, etc to move/tick
 	// EFFECT: Removes weapon effects that are no longer in play and ticks those remaining
 	void tickWeaponEffects() {
-		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.finished());
 		for (IWeaponEffect iwe : this.weaponEffects) {
-			iwe.tickWeapon();
+			iwe.tick();
 		}
 	}
+	
+	// Have weapon effects interact with the enemies in play
+	// EFFECT: Modifies this' weapon effects and enemies on collision
+	void weaponInteract() {
+		for (IWeaponEffect iwe : this.weaponEffects) {
+			for(IEnemy ie : this.enemies) {
+				iwe.interactEnemy(ie);
+			}
+			//iwe.interactPlayer();
+		}
+	}
+	
+	// Have enemies interact with the player
+	// EFFECT: Modifies player according to being hit by enemy
+	void enemiesInteractPlayer() {
+		for(IEnemy ie : this.enemies) {
+			ie.interactPlayer(this.player);
+		}
+	}
+	
+	// Ticks enemies independent of other enemies
+	// EFFECT: Modifies the enemies in play
+	void tickEnemies() {
+		for (IEnemy ie : this.enemies) {
+			ie.tick();
+		}
+	}
+	
+	// Removes components from play that are no longer necessary
+	// EFFECT: Modifies this' list of enemies and weapon effects
+	void removeComponents() {
+		this.enemies = new Util().filterOut(this.enemies, (e) -> e.shouldRemove());
+		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.shouldRemove());
+	}
 }
-

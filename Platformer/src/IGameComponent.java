@@ -8,6 +8,7 @@ import javalib.worldimages.Posn;
 import javalib.worldimages.RectangleImage;
 import javalib.worldimages.WorldImage;
 
+// A collection of global constants
 interface IConstant {
 	int BLOCK_SIZE = 10; // In pixels
 	int WINDX = BLOCK_SIZE * 120; // Window width in pixels
@@ -16,7 +17,6 @@ interface IConstant {
 	double GRAVITY = 100 * TICK_RATE * TICK_RATE * BLOCK_SIZE; // In (blocks per second) per second
 	Vector2D BLOCK_DIM = new Vector2D(BLOCK_SIZE, BLOCK_SIZE);
 	double COL_TOL = .001 * BLOCK_SIZE; // Small number in pixels used for collision tolerances
-
 }
 
 // To represent something visible on the screen
@@ -30,10 +30,16 @@ interface IDrawable {
 // handles collisions, and is visible on screen
 interface IGameComponent extends IDrawable {
 	// Modify the given player if an interaction occurs
-	void modifyPlayer(Player pl);
+	void interactPlayer(Player pl);
 
 	// The structure used for detecting and handling collisions
 	ICollisionBody getCollisionBody();
+	
+	// Should this game component be removed from play?
+	boolean shouldRemove();
+	
+	// Adjusts this game component on a tick, independent of other components
+	void tick();
 }
 
 // A rectangular game component
@@ -52,12 +58,13 @@ abstract class AGameComponent implements IGameComponent {
 	// Draws this at the proper position onto the background
 	// EFFECT: Modifies the given scene
 	public void drawOnto(WorldScene background) {
-		background.placeImageXY(new ImgUtil().pinTopLeftFromCenter(this.render()), (int) this.body.getPosition().x,
+		background.placeImageXY(new ImgUtil().pinTopLeftFromCenter(this.render()), 
+				(int) this.body.getPosition().x,
 				(int) this.body.getPosition().y);
 	}
 
 	// By default, no modification to player occurs
-	public void modifyPlayer(Player pl) {
+	public void interactPlayer(Player pl) {
 		return;
 	}
 
@@ -70,137 +77,107 @@ abstract class AGameComponent implements IGameComponent {
 	abstract WorldImage render();
 }
 
-// A single block that blocks movement in all directions
-class GroundBlock extends AGameComponent {
+interface IEnemy extends IGameComponent {
+	// Reduce this' health by the given amount
+	void reduceHealth(int amt);
+}
 
-	// Intializes this as a block at the given block position with standard block
-	// dimensions
-	GroundBlock(Posn blockPosition) {
-		super(new Util().topLFromBlock(blockPosition), IConstant.BLOCK_DIM);
+class MeleeEnemy extends AGameComponent implements IEnemy {
+	BlockOscillation bo;
+	boolean isDead;
+	
+	// Given starting block and finish block, initializes this with collision body at initial position
+	MeleeEnemy(Posn start, Posn finish) {
+		super(new Util().topLFromBlock(start), Player.DIM);
+		this.bo = new BlockOscillation(new Util().topLFromBlock(start), 
+				new Util().topLFromBlock(finish), Player.HORIZ_SPEED / 9);
+		this.isDead = false;
 	}
 
-	// Draws this as a black square
+	// Renders this as a red rectangle
 	WorldImage render() {
-		return new ImgUtil().drawBlock(Color.BLACK);
+		return this.body.render(Color.RED);
 	}
-
-	// Prevents player from moving through this block
-	// EFFECT: Modifies player position and velocity
-	public void modifyPlayer(Player pl) {
-		if (pl.getCollisionBody().collidingWith(this.body)) {
-			pl.resolveCollision(this.body);
+	
+	// Ticks this player by moving and then updating collision body
+	// EFFECT: Modifies this' BlockOscillation and CollisionBody
+	public void tick() {
+		this.bo = this.bo.onMove();
+		this.body = this.body.setPosition(this.bo.getCurrPosn());
+	}
+	
+	// Should remove this enemy if it is dead
+	public boolean shouldRemove() {
+		return this.isDead;
+	}
+	
+	// Kills player
+	public void reduceHealth(int amt) {
+		this.isDead = true;
+	}
+	
+	// Causes 1 damage to player if colliding
+	// EFFECT: Calls Player.onHit()
+	public void interactPlayer(Player pl) {
+		if(this.body.collidingWith(pl.getCollisionBody())) {
+			pl.onHit(1);
 		}
-	}
-
-	// Is the given player on top of this
-	boolean playerOnTop(Player pl) {
-		return pl.standingOnBlock(this.body);
 	}
 }
 
-// Utility methods for images
-class ImgUtil {
-	// Moves pinhole to top left corner of the given image
-	WorldImage pinTopLeftFromCenter(WorldImage img) {
-		return img.movePinhole(-img.getWidth() / 2, -img.getHeight() / 2);
+class BlockOscillation {
+	Vector2D initPosn;
+	Vector2D currPosn;
+	Vector2D finalPosn;
+	double speed;
+	boolean towardFinal;
+	
+	BlockOscillation(Vector2D initPosn, Vector2D finalPosn, 
+			Vector2D currPosn, double speed, boolean towardFinal) {
+		this.initPosn = initPosn;
+		this.finalPosn = finalPosn;
+		this.currPosn = currPosn;
+		this.speed = speed;
+		this.towardFinal = towardFinal;
 	}
-
-	// Moves pinhole to top left corner of the given image
-	WorldImage pinTopRightFromCenter(WorldImage img) {
-		return img.movePinhole(img.getWidth() / 2, -img.getHeight() / 2);
+	
+	BlockOscillation(Vector2D initPosn, Vector2D finalPosn, double speed) {
+		this(initPosn, finalPosn, initPosn, speed, true);
 	}
-
-	// Draws a square of constant size, solid fill of given color
-	WorldImage drawBlock(Color c) {
-		return new RectangleImage(IConstant.BLOCK_SIZE, IConstant.BLOCK_SIZE, OutlineMode.SOLID, c);
+	
+	BlockOscillation nextMove(Vector2D currPosn, boolean towardFinal) {
+		return new BlockOscillation(this.initPosn, this.finalPosn, currPosn, this.speed, towardFinal);
 	}
-
-	// Returns an image of an inventory box to display a weapon for HUD that scales
-	// with block size
-	WorldImage drawInventoryBox() {
-		return new OverlayImage(
-				new RectangleImage(IConstant.BLOCK_SIZE * 3 - 3, IConstant.BLOCK_SIZE * 3 - 3, OutlineMode.SOLID,
-						Color.WHITE),
-				new RectangleImage(IConstant.BLOCK_SIZE * 3, IConstant.BLOCK_SIZE * 3, OutlineMode.SOLID, Color.BLACK));
+	
+	Vector2D getCurrPosn() {
+		return this.currPosn;
 	}
-
-	// Returns an image of an inventory box to display a weapon for HUD that scales
-	// with block size
-	WorldImage drawHealthBox(boolean hasHealth) {
-		Color boxColor = hasHealth ? Color.red : Color.white;
-		return new OverlayImage(
-				new RectangleImage(IConstant.BLOCK_SIZE * 2 - 2, IConstant.BLOCK_SIZE * 2 - 2, OutlineMode.SOLID, boxColor),
-				new RectangleImage(IConstant.BLOCK_SIZE * 2, IConstant.BLOCK_SIZE * 2, OutlineMode.SOLID, Color.BLACK));
-	}
-
-	// Returns an orange square that fits under an inventory box to indicate the
-	// active weapon
-	WorldImage drawActiveWeaponHighlight() {
-		return new RectangleImage(IConstant.BLOCK_SIZE * 3 + 2, IConstant.BLOCK_SIZE * 3 + 2, OutlineMode.SOLID,
-				Color.ORANGE);
-	}
+	
+	BlockOscillation onMove() {
+		if(towardFinal) {
+			Vector2D next = this.initPosn.displacementTo(this.finalPosn).scaleTo(
+					this.speed / IConstant.TICK_RATE);
+			if(next.magnitude() > this.currPosn.distanceTo(this.finalPosn)) {
+				return this.nextMove(this.finalPosn, false);
+			} else {
+				return this.nextMove(this.currPosn.addVectors(next), true);
+			}
+		} else {
+			Vector2D next = this.finalPosn.displacementTo(this.initPosn).scaleTo(
+					this.speed / IConstant.TICK_RATE);
+			if(next.magnitude() > this.currPosn.distanceTo(this.initPosn)) {
+				return this.nextMove(this.initPosn, true);
+			} else {
+				return this.nextMove(this.currPosn.addVectors(next), false);
+			}
+		}
+	}	
 }
 
-// Utility methods
-class Util {
-	// Is the given middle number in between the low and high (inclusive)
-	boolean inclusiveBetween(double low, double med, double high) {
-		return low <= med && med <= high;
-	}
-
-	// Returns the top-left position of the block at the given block position
-	Vector2D topLFromBlock(Posn blockPos) {
-		return new Vector2D(blockPos.x * IConstant.BLOCK_SIZE, blockPos.y * IConstant.BLOCK_SIZE);
-	}
-
-	// Does the given predicate satisfy for at least one element in the given list
-	<T> boolean ormap(ArrayList<T> al, IPred<T> pred) {
-		for (T item : al) {
-			if (pred.apply(item)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// Returns a positionally consistent list of the result of applying the given
-	// function to each element in the list
-	<T, U> ArrayList<U> map(ArrayList<T> al, IFunc<T, U> func) {
-		ArrayList<U> result = new ArrayList<U>();
-		for (T item : al) {
-			result.add(func.apply(item));
-		}
-		return result;
-	}
-
-	// Returns the first item in the given list that minimizes the given function
-	<T> T findMin(ArrayList<T> al, IFunc<T, Double> func) {
-		if (al.size() == 0) {
-			throw new IllegalArgumentException("Cannot find minimum of empty list.");
-		}
-		T min = al.get(0);
-		for (T item : al.subList(1, al.size())) {
-			if (func.apply(item) < func.apply(min)) {
-				min = item;
-			}
-		}
-		return min;
-	}
-
-	// Returns a new list without any elements that satisfy the given predicate
-	<T> ArrayList<T> filterOut(ArrayList<T> al, IPred<T> pred) {
-		ArrayList<T> result = new ArrayList<T>();
-		for (T item : al) {
-			if (!pred.apply(item)) {
-				result.add(item);
-			}
-		}
-		return result;
-	}
-}
 
 // A count-down clock that decrements up to a given amount
 class TimeTemporary {
+	private final int total;
 	private final int ticksLeft;
 
 	TimeTemporary(int ticksLeft) {
@@ -208,6 +185,7 @@ class TimeTemporary {
 			throw new IllegalArgumentException("Ticks given must be positive.");
 		}
 		this.ticksLeft = ticksLeft;
+		this.total = ticksLeft;
 	}
 
 	// Returns new TimeTemporary with one less tick left, assuming there are any
@@ -221,5 +199,9 @@ class TimeTemporary {
 	// Are there zero ticks left?
 	boolean finished() {
 		return this.ticksLeft == 0;
+	}
+	
+	TimeTemporary reset() {
+		return new TimeTemporary(this.total);
 	}
 }

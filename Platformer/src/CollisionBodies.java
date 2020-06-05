@@ -36,6 +36,7 @@ interface ICollisionBody {
 	// Returns the vector that THIS would have to move to resolve collision with the given rectangle
 	Vector2D resolveCollisionRect(Rectangle other);
 	
+	// Returns the geometric center of this collision body
 	Vector2D center();
 }
 
@@ -98,6 +99,7 @@ class Point extends ACollisionBody {
 		return other.resolveCollisionPoint(this.topLeft).opposite();
 	}
 	
+	// Center same as top left
 	public Vector2D center() {
 		return this.topLeft;
 	}
@@ -124,6 +126,10 @@ class Rectangle extends ACollisionBody {
 	
 	// Returns the dimensions of this rectangle as width * height
 	Vector2D getDimensions() {return this.dimensions;}
+	
+	Rectangle setPosition(Vector2D next) {
+		return new Rectangle(next, this.dimensions);
+	}
 	// Returns the points corresponding to the four corners of this rectangle
 	ArrayList<Point> cornerPoints() {
 		return new Util().map(this.cornerPositions(), (pt) -> new Point(pt));
@@ -231,9 +237,3 @@ class Rectangle extends ACollisionBody {
 		}
 	}
 }
-
-interface IFunc<A, R> {
-	R apply(A arg);
-}
-
-interface IPred<T> extends IFunc<T, Boolean>{}
