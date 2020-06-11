@@ -33,6 +33,8 @@ class Weaponry implements IDrawable {
 		}
 	}
 	
+	// Adds the given amount of ammunition to the weapon at the given inventory position if applicable
+	// EFFECT: Modifies a weapon in this' weapons
 	void addAmmo(int invPos, int amt) {
 		if(invPos > 1 && this.weapons.keySet().contains(invPos)) {
 			this.weapons.get(invPos).addAmmo(amt);
@@ -108,11 +110,13 @@ interface IWeapon {
 	// Draws an icon of this weapon for HUD including information like ammo remaining
 	WorldImage drawInventory();
 	
+	// Add the given amount of ammunition to this weapon if applicable
 	void addAmmo(int amt);
 }
 
 // A short-range, early game melee weapon
 class Knife implements IWeapon {
+	static final int INV = 1;
 	// The amount of time that must pass between knife swings
 	TimeTemporary reload;
 	
@@ -122,7 +126,7 @@ class Knife implements IWeapon {
 	}
 	
 	public int inventoryPos() {
-		return 1;
+		return Knife.INV;
 	}
 
 	// Returns a list with one knife-effect if the knife is ready to be swung
@@ -177,7 +181,7 @@ class Pistol implements IWeapon {
 	public ArrayList<IWeaponEffect> fire(Vector2D from, Vector2D disp) {
 		ArrayList<IWeaponEffect> toReturn = new ArrayList<>();
 		if(this.reload.finished() && this.ammo > 0) {
-			toReturn.add(new StandardBullet(from, disp.getUnitVector()));
+			toReturn.add(new PlayerBullet(from, disp.getUnitVector()));
 			this.reload = new TimeTemporary((int) (1 / IConstant.TICK_RATE));
 			this.ammo -= 1;
 		}
@@ -198,6 +202,8 @@ class Pistol implements IWeapon {
 		return icon;
 	}
 
+	// Adds given ammunition to this' ammo count
+	// EFFECT: Modifies this' ammo
 	public void addAmmo(int amt) {
 		this.ammo += amt;
 	}
@@ -205,8 +211,9 @@ class Pistol implements IWeapon {
 
 // The absence of any weapon equipped (default state)
 class NoWeapon implements IWeapon {
+	static final int INV = 0;
 	public int inventoryPos() {
-		return 0;
+		return NoWeapon.INV;
 	}
 
 	// has no effect on firing
@@ -230,12 +237,15 @@ class NoWeapon implements IWeapon {
 }
 
 // To represent the physical effect of a weapon being activated
-interface IWeaponEffect extends IGameComponent {	
+interface IWeaponEffect extends IGameComponent {
+	// Interact with the given enemy likely if there is a collision
 	void interactEnemy(IEnemy ie);
 	
-	void interactEnvironment(IEnvironment ie);
+	// Interact with the given environment component likely if there is a collision
+	void interactEnvironment(IEnvironment ie); //TODO: abstract collision detection
 }
 
+// To represent some projectile weapon effect flying through the air
 abstract class AProjectile extends AGameComponent implements IWeaponEffect {
 	Vector2D velocity;
 	
@@ -244,45 +254,81 @@ abstract class AProjectile extends AGameComponent implements IWeaponEffect {
 		this.velocity = velocity;
 	}
 	
+	// Moves this projectile by its velocity
+	// EFFECT: Modifies this' position
 	void move() {
 		this.body = this.body.onMove(this.velocity);
 	}
 }
 
-class StandardBullet extends AProjectile {
+// To represent a bullet fired by an enemy (presumably at the player)
+class EnemyBullet extends AProjectile {
 	static final int SIZE = 5;
 	static final Vector2D DIM = new Vector2D(SIZE, SIZE);
 	static final double SPEED = 20 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE;
 	
 	boolean hit;
 	
-	StandardBullet(Vector2D start, Vector2D dir) {
+	EnemyBullet(Vector2D start, Vector2D dir) {
 		super(new Rectangle(start.addVectors(DIM.scaleVector(.5)), DIM), dir.scaleTo(SPEED));
 	}
 
+	// REnders as small orange square
 	public WorldImage render() {
 		return this.body.render(Color.ORANGE);
 	}
 	
+	// Remove this bullet if it has hit something (environment, player)
 	public boolean shouldRemove() {
 		return this.hit;
 	}
 
+	// Moves this bullet on a tick
+	// EFFECT: Modifies this' position
 	public void tick() {
 		this.move();
 	}
 
+	// No interaction with other enemies
+	public void interactEnemy(IEnemy ie) {}
+
+	// Flags 'hit' if collision with environment (to be removed)
+	// EFFECT: Modifies this' hit flag
+	public void interactEnvironment(IEnvironment ie) {
+		if(this.body.collidingWith(ie.getCollisionBody())) {
+			this.hit = true;
+		}
+	}
+	
+	// Flags 'hit' and reduces player health
+	// EFFECT: Modifies this' hit and player's health
+	public void interactPlayerOnCollision(Player pl) {
+		this.hit = true;
+		pl.onHit(1);
+	}
+}
+
+// A bullet fired by the player that hurts enemies and cannot hurt player
+class PlayerBullet extends EnemyBullet {
+	PlayerBullet(Vector2D start, Vector2D dir) {
+		super(start, dir);
+	}
+	
+	// No player interaction
+	public void interactPlayer(Player pl) {}
+	
+	// Flags 'hit' and reduces enemy health
+	// EFFECT: Modifies this' hit and enemy's health
 	public void interactEnemy(IEnemy ie) {
 		if(this.body.collidingWith(ie.getCollisionBody())) {
 			this.hit = true;
 			ie.reduceHealth(1);
 		}
 	}
-
-	public void interactEnvironment(IEnvironment ie) {
-		if(this.body.collidingWith(ie.getCollisionBody())) {
-			this.hit = true;
-		}
+	
+	// Renders as a small green square
+	public WorldImage render() {
+		return this.body.render(Color.GREEN);
 	}
 }
 
@@ -325,9 +371,11 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 		}
 	}
 
+	// No environment interaction
 	public void interactEnvironment(IEnvironment ie) {}
 }
 
+// Some cache of ammunition that can be picked up by the player
 abstract class AAmmoPickup extends AGameComponent {
 	int amount;
 	boolean taken;
@@ -338,14 +386,18 @@ abstract class AAmmoPickup extends AGameComponent {
 		this.taken = false;
 	}
 	
+	// The inventory position of the corresponding weapon
 	abstract int inventoryPosition();
 	
 	public void tick() {}
 	
+	// Remove this if it has been picked up by player
 	public boolean shouldRemove() {
 		return this.taken;
 	}
 	
+	// Adds this' ammunition value to the corresponding weapon in player inventory
+	// EFFECT: Modifies a weapon in player inventory
 	public void interactPlayerOnCollision(Player pl) {
 		if(! this.taken) {
 			pl.addAmmo(this.inventoryPosition(), this.amount);
@@ -356,16 +408,19 @@ abstract class AAmmoPickup extends AGameComponent {
 	}
 }
 
+// A cache of pistol ammunition
 class PistolAmmo extends AAmmoPickup {
 
 	PistolAmmo(Posn blockPos, int amount) {
 		super(blockPos, amount);
 	}
 
+	// Corresponds to pistol
 	int inventoryPosition() {
 		return Pistol.INV;
 	}
 
+	// Grey square rendering
 	WorldImage render() {
 		return this.body.render(Color.GRAY);
 	}

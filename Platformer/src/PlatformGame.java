@@ -29,6 +29,7 @@ class PlatformGame {
 		
 		this.items = new ArrayList<>();
 		this.items.add(new PistolAmmo(new Posn(55, 54), 5));
+		this.enemies.add(new SentryTurret(new Posn(50, 10)));
 	}
 	
 	// Draws the current state of the game onto the background
@@ -131,11 +132,12 @@ class PlatformGame {
 		}
 	}
 	
-	// Ticks enemies independent of other enemies
-	// EFFECT: Modifies the enemies in play
+	// Ticks enemies independent of other enemies and registers enemies' using weapons
+	// EFFECT: Modifies the enemies in play and this' list of weapon effects
 	void tickEnemies() {
 		for (IEnemy ie : this.enemies) {
 			ie.tick();
+			this.weaponEffects.addAll(ie.fireAt(this.player.getCollisionBody().center()));
 		}
 	}
 	
@@ -145,6 +147,5 @@ class PlatformGame {
 		this.enemies = new Util().filterOut(this.enemies, (e) -> e.shouldRemove());
 		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.shouldRemove());
 		this.items = new Util().filterOut(this.items, (i) -> i.shouldRemove());
-
 	}
 }
