@@ -58,5 +58,9 @@ class PlatformWorld extends World {
 			this.game.playerFireAt(new Vector2D(pos));
 		}
 	}
+	
+	public void onMouseMoved(Posn pos) {
+		this.game.playerFace(pos);
+	}
 
 }

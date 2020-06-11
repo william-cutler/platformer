@@ -227,13 +227,10 @@ class Rectangle extends ACollisionBody {
 	// Is this rectangle within the other rectangle on the given axis 
 	// (does not necessarily correspond to collision)
 	boolean linearCollision(Rectangle other, boolean checkingColumn) {
-		Util u = new Util();
 		if(checkingColumn) {
-			return (u.inclusiveBetween(this.topLeft.x, other.topLeft().x, this.topRight().x))
-					|| u.inclusiveBetween(this.topLeft.x, other.topRight().x, this.topRight().x);
+			return !(this.topRight().x < other.topLeft().x || this.topLeft.x > other.topRight().x);
 		} else {
-			return (u.inclusiveBetween(this.topLeft.y, other.topLeft().y, this.topRight().y))
-			|| u.inclusiveBetween(this.topLeft.y, other.topRight().y, this.topRight().y);
+			return !(this.topRight().y < other.topLeft().y || this.topLeft.y > other.topRight().y);
 		}
 	}
 }

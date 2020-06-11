@@ -65,8 +65,12 @@ abstract class AGameComponent implements IGameComponent {
 
 	// By default, no modification to player occurs
 	public void interactPlayer(Player pl) {
-		return;
+		if(this.body.collidingWith(pl.getCollisionBody())) {
+			this.interactPlayerOnCollision(pl);
+		}
 	}
+	
+	void interactPlayerOnCollision(Player pl) {}
 
 	// Returns this' rectangular collision body
 	public ICollisionBody getCollisionBody() {
@@ -116,12 +120,8 @@ class MeleeEnemy extends AGameComponent implements IEnemy {
 		this.isDead = true;
 	}
 	
-	// Causes 1 damage to player if colliding
-	// EFFECT: Calls Player.onHit()
-	public void interactPlayer(Player pl) {
-		if(this.body.collidingWith(pl.getCollisionBody())) {
-			pl.onHit(1);
-		}
+	void interactPlayerOnCollision(Player pl) {
+		pl.onHit(1);
 	}
 }
 

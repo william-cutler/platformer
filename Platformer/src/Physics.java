@@ -25,6 +25,10 @@ class Vector2D {
 		this(pos.x, pos.y);
 	}
 	
+	static Vector2D posnDisp(Posn start, Posn end) {
+		return new Vector2D(end.x - start.x, end.y - start.y);
+	}
+	
 	// Returns a 2D vector from the given polar coordinates (angle in degrees)
 	static Vector2D polarToRectangular(double r, double theta) {
 		double xComp = r * Math.cos(Angle.toRadians(theta));

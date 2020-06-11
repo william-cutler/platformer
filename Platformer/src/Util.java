@@ -5,6 +5,9 @@ import javalib.worldimages.OutlineMode;
 import javalib.worldimages.OverlayImage;
 import javalib.worldimages.Posn;
 import javalib.worldimages.RectangleImage;
+import javalib.worldimages.ScaleImage;
+import javalib.worldimages.ScaleImageXY;
+import javalib.worldimages.TextImage;
 import javalib.worldimages.WorldImage;
 
 
@@ -33,12 +36,23 @@ class ImgUtil {
 
 	// Returns an image of an inventory box to display a weapon for HUD that scales
 	// with block size
-	WorldImage drawInventoryBox() {
-		return new OverlayImage(
+	WorldImage drawInventoryBox(int inventoryPos, int ammo) {
+		WorldImage icon = new OverlayImage(
 				new RectangleImage(IConstant.BLOCK_SIZE * 3 - 3, 
 						IConstant.BLOCK_SIZE * 3 - 3, OutlineMode.SOLID, Color.WHITE),
 				new RectangleImage(IConstant.BLOCK_SIZE * 3, 
 						IConstant.BLOCK_SIZE * 3, OutlineMode.SOLID, Color.BLACK));
+		
+		icon = icon.movePinholeTo(new Posn((int)(- icon.getWidth() / 3), (int)(icon.getHeight() / 4)));
+		icon = new OverlayImage(new TextImage(Integer.toString(inventoryPos), 10, Color.BLACK), icon);
+		icon = icon.movePinholeTo(new Posn(0, 0));
+		
+		if(ammo >= 0) {
+			icon = icon.movePinholeTo(new Posn((int)(icon.getWidth() / 3), (int)(icon.getHeight() / 4)));
+			icon = new OverlayImage(new TextImage(Integer.toString(ammo), 10, Color.BLACK), icon);
+			icon = icon.movePinholeTo(new Posn(0, 0));
+		}
+		return icon;
 	}
 
 	// Returns an image of an inventory box to display a weapon for HUD that scales
@@ -50,6 +64,10 @@ class ImgUtil {
 						IConstant.BLOCK_SIZE * 2 - 2, OutlineMode.SOLID, boxColor),
 				new RectangleImage(IConstant.BLOCK_SIZE * 2, 
 						IConstant.BLOCK_SIZE * 2, OutlineMode.SOLID, Color.BLACK));
+	}
+	
+	WorldImage scaleImgTo(WorldImage img, int width, int height) {
+		return new ScaleImageXY(img, width / img.getWidth(), height / img.getHeight());
 	}
 
 	// Returns an orange square that fits under an inventory box to indicate the
@@ -115,5 +133,9 @@ class Util {
 			}
 		}
 		return result;
+	}
+	
+	boolean vertical(Direction dir) {
+		return dir.equals(Direction.UP) || dir.equals(Direction.DOWN);
 	}
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import javalib.impworld.WorldScene;
 import javalib.worldimages.BesideImage;
 import javalib.worldimages.EmptyImage;
+import javalib.worldimages.FromFileImage;
 import javalib.worldimages.OutlineMode;
 import javalib.worldimages.Posn;
 import javalib.worldimages.RectangleImage;
@@ -28,6 +29,7 @@ class Player extends AGameComponent {
 	Vector2D velocity; // Pixels per tick
 	Weaponry weapons;
 	TimeTemporary hitImmunity;
+	boolean facingRight;
 
 	// Constructor initializes this with the given top-left, constant dimensions, 3 health, and 0 velocity
 	Player(Vector2D topLeft) {
@@ -36,19 +38,26 @@ class Player extends AGameComponent {
 		this.velocity = Vector2D.ZERO;
 		this.weapons = new Weaponry();
 		this.hitImmunity = new TimeTemporary(Player.HIT_IMMUNITY);
+		this.facingRight = true;
 	}
 	
 	//VISUALIZATIONS
 
 	// Draws the player as a blue rectangle
 	WorldImage render() {
-		return new VisiblePinholeImage(this.body.render(Color.BLUE));
+		WorldImage icon = new FromFileImage(this.facingRight ? "brash.jpg" : "brash-l.jpg");
+		return new ImgUtil().scaleImgTo(icon, IConstant.BLOCK_SIZE * Player.WIDTH, 
+				IConstant.BLOCK_SIZE * Player.HEIGHT);
 	}
 	
 	// Draws non-game component aspects of this player such as health, inventory, and weapons
 	void drawHUD(WorldScene background) {
 		this.weapons.drawOnto(background);
 		this.health.drawOnto(background);
+	}
+	
+	void face(Vector2D pos) {
+		this.facingRight = pos.x >= this.body.center().x;
 	}
 	
 	//MOVEMENT
@@ -116,7 +125,13 @@ class Player extends AGameComponent {
 		return this.weapons.currentWeapon().fire(this.body.center(), 
 				this.body.center().displacementTo(target));
 	}
-
+	
+	void addAmmo(int invPos, int amt) {
+		this.weapons.addAmmo(invPos, amt);
+	}
+	
+	// INTERFACING AND WORLD EXISTENCE
+	
 	// The Player should never be removed
 	public boolean shouldRemove() {
 		return false;

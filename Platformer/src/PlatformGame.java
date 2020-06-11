@@ -5,33 +5,30 @@ import javalib.worldimages.Posn;
 
 class PlatformGame {
 	Player player;
-	ArrayList<GroundBlock> ground;
+	ArrayList<IEnvironment> ground;
 	ArrayList<IWeaponEffect> weaponEffects;
 	ArrayList<IEnemy> enemies;
+	ArrayList<IGameComponent> items;
 	
 	PlatformGame() {
 		this.player = new Player(new Vector2D(10, 350));
 		
+		EnvironmentGenerator gb = new EnvironmentGenerator();
+		
 		ground = new ArrayList<>();
-		for(int i = 0; i < 100; i += 1) {
-			ground.add(new GroundBlock(new Posn(i, 60)));
-		}
-		ground.add(new GroundBlock(new Posn(5, 59)));
-		ground.add(new GroundBlock(new Posn(35, 57)));
-		ground.add(new GroundBlock(new Posn(40, 55)));
-		ground.add(new GroundBlock(new Posn(45, 53)));
-		ground.add(new GroundBlock(new Posn(47, 53)));
-		ground.add(new GroundBlock(new Posn(49, 53)));
+		ground.add(gb.line(new Posn(0, 60), true, 100));
+		ground.add(gb.line(new Posn(22, 53), true, 5));
+		ground.add(gb.line(new Posn(50, 55), true, 10));
 
-		ground.add(new GroundBlock(new Posn(50, 51)));
-		ground.add(new GroundBlock(new Posn(10, 50)));
-		ground.add(new GroundBlock(new Posn(35, 37)));
-		ground.add(new GroundBlock(new Posn(38, 43)));
-		ground.add(new GroundBlock(new Posn(43, 47)));
+		ground.add(gb.line(new Posn(0, 0), false, 100));
+		ground.add(new Spikes(new Posn(20, 59), Direction.UP, 10));
 		
 		this.weaponEffects = new ArrayList<>();
 		this.enemies = new ArrayList<>();
 		this.enemies.add(new MeleeEnemy(new Posn(70, 57), new Posn(90, 57)));
+		
+		this.items = new ArrayList<>();
+		this.items.add(new PistolAmmo(new Posn(55, 54), 5));
 	}
 	
 	// Draws the current state of the game onto the background
@@ -50,6 +47,7 @@ class PlatformGame {
 		igc.addAll(this.ground);
 		igc.addAll(this.weaponEffects);
 		igc.addAll(this.enemies);
+		igc.addAll(this.items);
 		return igc;
 	}
 	
@@ -63,8 +61,8 @@ class PlatformGame {
 	// Causes player to jump if player is standing on a solid surface
 	// EFFECT: Modifies velocity of player
 	void playerJump() {
-		for(GroundBlock gb : this.ground) {
-			if (gb.playerOnTop(this.player)){
+		for(IEnvironment ie : this.ground) {
+			if (ie.playerOnTop(this.player)){
 				this.player.jump();
 				return;
 			}
@@ -87,6 +85,10 @@ class PlatformGame {
 	// EFFECT: Modifies active weapon in Player's Weaponry
 	void playerSwitchWeapon(int next) {
 		this.player.switchWeapon(next);
+	}
+	
+	void playerFace(Posn pos) {
+		this.player.face(new Vector2D(pos));
 	}
 	
 	//TICKING AND INTERACTIONS
@@ -115,7 +117,9 @@ class PlatformGame {
 			for(IEnemy ie : this.enemies) {
 				iwe.interactEnemy(ie);
 			}
-			//iwe.interactPlayer();
+			for (IEnvironment ie : this.ground) {
+				iwe.interactEnvironment(ie);
+			}
 		}
 	}
 	
@@ -140,5 +144,7 @@ class PlatformGame {
 	void removeComponents() {
 		this.enemies = new Util().filterOut(this.enemies, (e) -> e.shouldRemove());
 		this.weaponEffects = new Util().filterOut(this.weaponEffects, (we) -> we.shouldRemove());
+		this.items = new Util().filterOut(this.items, (i) -> i.shouldRemove());
+
 	}
 }
