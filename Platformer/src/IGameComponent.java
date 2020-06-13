@@ -183,6 +183,10 @@ class BlockOscillation {
 		return this.currPosn;
 	}
 	
+	Vector2D direction() {
+		return this.currPosn.displacementTo(this.onMove().getCurrPosn()).getUnitVector();
+	}
+	
 	// Returns updates B.O. moved in the current direction at speed, 
 	// and can switch directions if end-point is reached
 	BlockOscillation onMove() {

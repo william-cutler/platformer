@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 import javalib.worldimages.CircleImage;
+import javalib.worldimages.FromFileImage;
 import javalib.worldimages.OutlineMode;
 import javalib.worldimages.RectangleImage;
 import javalib.worldimages.WorldImage;
@@ -11,7 +12,7 @@ import javalib.worldimages.WorldImage;
 interface ICollisionBody {
 	// A visual depiction with the given color
 	WorldImage render(Color c);
-	
+		
 	// The position of the geometric center of this collision body in image coordinates
 	Vector2D getPosition();
 	
@@ -150,6 +151,12 @@ class Rectangle extends ACollisionBody {
 	public WorldImage render(Color c) {
 		return new RectangleImage((int) this.dimensions.x, (int) this.dimensions.y, OutlineMode.SOLID, c);
 	}
+	
+	WorldImage render(String fname) {
+		return new ImgUtil().scaleImgTo(new FromFileImage(fname), (int) this.dimensions.x,
+				(int) this.dimensions.y);
+	}
+
 	
 	// Returns a new rectangle having moved by the given amount (velocity assumes 1 tick has passed)
 	public Rectangle onMove(Vector2D velocity) {

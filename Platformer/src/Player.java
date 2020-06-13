@@ -1,29 +1,21 @@
-import java.awt.Color;
 import java.util.ArrayList;
 
 import javalib.impworld.WorldScene;
-import javalib.worldimages.BesideImage;
-import javalib.worldimages.EmptyImage;
 import javalib.worldimages.FromFileImage;
-import javalib.worldimages.OutlineMode;
-import javalib.worldimages.Posn;
-import javalib.worldimages.RectangleImage;
-import javalib.worldimages.VisiblePinholeImage;
 import javalib.worldimages.WorldImage;
 
 // To represent the player character controlled by the used with health, weapons, and feelings (not really)
 class Player extends AGameComponent {
 	static final int WIDTH = 2; // In blocks
 	static final int HEIGHT = 3; // In blocks
-	static final Vector2D DIM = new Vector2D(Player.WIDTH * IConstant.BLOCK_SIZE, 
-			Player.HEIGHT * IConstant.BLOCK_SIZE);
-	static final double HORIZ_SPEED 
-	= 1.5 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is blocks per second
-	static final double JUMP_VELOC 
-	= -40 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is blocks per second
-	static final double TERMINAL_SPEED 
-	= 100 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is blocks per second
-	static final int HIT_IMMUNITY = (int) (2 / IConstant.TICK_RATE);
+	static final Vector2D DIM = new Vector2D(Player.WIDTH * IConstant.BLOCK_SIZE, Player.HEIGHT * IConstant.BLOCK_SIZE);
+	static final double HORIZ_SPEED = 1.5 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is
+																						// blocks per second
+	static final double JUMP_VELOC = -40 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number is
+																						// blocks per second
+	static final double TERMINAL_SPEED = 100 * IConstant.BLOCK_SIZE * IConstant.TICK_RATE; // In pixels per tick, number
+																							// is blocks per second
+	static final int HIT_IMMUNITY = (int) (1.5 / IConstant.TICK_RATE);
 
 	Health health;
 	Vector2D velocity; // Pixels per tick
@@ -31,7 +23,8 @@ class Player extends AGameComponent {
 	TimeTemporary hitImmunity;
 	boolean facingRight;
 
-	// Constructor initializes this with the given top-left, constant dimensions, 3 health, and 0 velocity
+	// Constructor initializes this with the given top-left, constant dimensions, 3
+	// health, and 0 velocity
 	Player(Vector2D topLeft) {
 		super(topLeft, Player.DIM);
 		this.health = new Health(3);
@@ -40,27 +33,27 @@ class Player extends AGameComponent {
 		this.hitImmunity = new TimeTemporary(Player.HIT_IMMUNITY);
 		this.facingRight = true;
 	}
-	
-	//VISUALIZATIONS
+
+	// VISUALIZATIONS
 
 	// Draws the player as a blue rectangle
 	WorldImage render() {
-		WorldImage icon = new FromFileImage(this.facingRight ? "brash.jpg" : "brash-l.jpg");
-		return new ImgUtil().scaleImgTo(icon, IConstant.BLOCK_SIZE * Player.WIDTH, 
-				IConstant.BLOCK_SIZE * Player.HEIGHT);
+		String fname = this.facingRight ? "brash.jpg" : "brash-l.jpg";
+		return this.body.render(fname);
 	}
-	
-	// Draws non-game component aspects of this player such as health, inventory, and weapons
+
+	// Draws non-game component aspects of this player such as health, inventory,
+	// and weapons
 	void drawHUD(WorldScene background) {
 		this.weapons.drawOnto(background);
 		this.health.drawOnto(background);
 	}
-	
+
 	void face(Vector2D pos) {
 		this.facingRight = pos.x >= this.body.center().x;
 	}
-	
-	//MOVEMENT
+
+	// MOVEMENT
 
 	// Stops movement in the 'x' direction
 	void haltX() {
@@ -77,7 +70,8 @@ class Player extends AGameComponent {
 		}
 	}
 
-	// Moves this player on tick according to its velocity, and adjusts velocity based on gravity
+	// Moves this player on tick according to its velocity, and adjusts velocity
+	// based on gravity
 	// EFFECT: Modifies this' collision body's position and this' velocity
 	private void moveOnTick() {
 		this.body = this.body.onMove(this.velocity);
@@ -96,7 +90,8 @@ class Player extends AGameComponent {
 		return (this.body.onTopOf(ground));
 	}
 
-	// Adjusts position and velocity of player to resolve a collision with the given rectangle
+	// Adjusts position and velocity of player to resolve a collision with the given
+	// rectangle
 	// EFFECT: Modifies this' body's position and velocity
 	void resolveCollision(Rectangle other) {
 		Vector2D resolution = other.resolveCollision(this.body);
@@ -112,51 +107,65 @@ class Player extends AGameComponent {
 		}
 	}
 
-	//WEAPONS
+	// WEAPONS
 	// Switches weapons to the one corresponding to position in inventory
 	// EFFECT: Modifies this' Weaponry active weapon
 	void switchWeapon(int next) {
 		this.weapons.changeWeaponTo(next);
 	}
-	
+
 	// Creates weapon effects due to firing weapon at the target
 	// EFFECT: Modifies the active weapon on firing
 	ArrayList<IWeaponEffect> fireCurrentWeapon(Vector2D target) {
-		return this.weapons.currentWeapon().fire(this.body.center(), 
-				this.body.center().displacementTo(target));
+		return this.weapons.currentWeapon().fire(this.body.center(), this.body.center().displacementTo(target));
 	}
-	
-	// Add the given ammo amount to the weapon at the corresponding inventory position
+
+	// Add the given ammo amount to the weapon at the corresponding inventory
+	// position
 	// EFFECT: Modifies a weapon in this' inventory of weapons
 	void addAmmo(int invPos, int amt) {
 		this.weapons.addAmmo(invPos, amt);
 	}
-	
+
 	// INTERFACING AND WORLD EXISTENCE
-	
+
 	// The Player should never be removed
 	public boolean shouldRemove() {
 		return false;
 	}
 
-	// Updates player motion according to velocity and gravity, ticks inventory weapons, and ticks
+	// Updates player motion according to velocity and gravity, ticks inventory
+	// weapons, and ticks
 	// hit immunity if active
 	// EFFECT: Modifies this' position, velocity, weaponry, and hitImmunity
 	public void tick() {
 		this.moveOnTick();
 		this.weapons.tickWeaponry();
-		if(! this.hitImmunity.finished()) {
+		if (!this.hitImmunity.finished()) {
 			this.hitImmunity = this.hitImmunity.onTick();
 		}
 	}
-	
-	// Adjusts health upon taking damage if not hitImmune, and activates hitImmunity once hit
+
+	// Adjusts health upon taking damage if not hitImmune, and activates hitImmunity
+	// once hit
 	// EFFECT: Modifies this' health and hitImmunity
 	void onHit(int damage) {
-		if(damage < 0) {throw new IllegalArgumentException("Cannot take negative damage.");}
-		if(this.hitImmunity.finished()) {
+		if (damage < 0) {
+			throw new IllegalArgumentException("Cannot take negative damage.");
+		}
+		if (this.hitImmunity.finished()) {
 			this.health = this.health.changeCurrent(-1 * damage);
 			this.hitImmunity = new TimeTemporary(Player.HIT_IMMUNITY);
 		}
+	}
+
+	// Adjusts health upon taking damage if not hitImmune, and activates hitImmunity
+	// once hit
+	// EFFECT: Modifies this' health and hitImmunity
+	void gainHealth(int amt) {
+		if (amt < 0) {
+			throw new IllegalArgumentException("Cannot gain negative health.");
+		}
+		this.health = this.health.changeCurrent(amt);
 	}
 }

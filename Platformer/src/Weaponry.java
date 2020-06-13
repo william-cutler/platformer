@@ -337,6 +337,8 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 	// The amount of time a knife-swing exists
 	TimeTemporary tt;
 	
+	boolean hit;
+	
 	// Constructor creates a Rectangle body just outside the player depending on which direction was swung at
 	// And lasts for 1/20th of a second
 	KnifeEffect(Vector2D fromCenter, boolean facingRight) {
@@ -345,6 +347,7 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 				-IConstant.BLOCK_SIZE / 2)), 
 				IConstant.BLOCK_DIM);
 		this.tt = new TimeTemporary((int) (.05 / IConstant.TICK_RATE));
+		this.hit = false;
 	}
 
 	// The knife-effect lasts as long as the given effect
@@ -366,8 +369,9 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 	// Reduces health of enemy by 1 if hit
 	// EFFECT: Modifies enemy according to health loss method
 	public void interactEnemy(IEnemy ie) {
-		if(this.body.collidingWith(ie.getCollisionBody())) {
+		if(!this.hit && this.body.collidingWith(ie.getCollisionBody())) {
 			ie.reduceHealth(1);
+			this.hit = true;
 		}
 	}
 
@@ -376,18 +380,13 @@ class KnifeEffect extends AGameComponent implements IWeaponEffect {
 }
 
 // Some cache of ammunition that can be picked up by the player
-abstract class AAmmoPickup extends AGameComponent {
-	int amount;
+abstract class AItem extends AGameComponent {
 	boolean taken;
 	
-	AAmmoPickup(Posn blockPos, int amount) {
+	AItem(Posn blockPos) {
 		super(new Util().topLFromBlock(blockPos), IConstant.BLOCK_DIM);
-		this.amount = amount;
 		this.taken = false;
 	}
-	
-	// The inventory position of the corresponding weapon
-	abstract int inventoryPosition();
 	
 	public void tick() {}
 	
@@ -400,28 +399,47 @@ abstract class AAmmoPickup extends AGameComponent {
 	// EFFECT: Modifies a weapon in player inventory
 	public void interactPlayerOnCollision(Player pl) {
 		if(! this.taken) {
-			pl.addAmmo(this.inventoryPosition(), this.amount);
+			this.onPickup(pl);
 			this.taken = true;
 		} else {
-			throw new RuntimeException("Ammo already taken.");
+			throw new RuntimeException("Item already taken.");
 		}
 	}
+	
+	abstract void onPickup(Player pl);
+}
+
+
+class InstantHealth extends AItem {
+	InstantHealth(Posn blockPos) {
+		super(blockPos);
+	}
+
+	void onPickup(Player pl) {
+		pl.gainHealth(1);
+	}
+
+	WorldImage render() {
+		return this.body.render(Color.RED);
+	}	
+	
 }
 
 // A cache of pistol ammunition
-class PistolAmmo extends AAmmoPickup {
-
+class PistolAmmo extends AItem {
+	int amount;
 	PistolAmmo(Posn blockPos, int amount) {
-		super(blockPos, amount);
-	}
-
-	// Corresponds to pistol
-	int inventoryPosition() {
-		return Pistol.INV;
+		super(blockPos);
+		this.amount = amount;
 	}
 
 	// Grey square rendering
 	WorldImage render() {
-		return this.body.render(Color.GRAY);
+		//return this.body.render(Color.GRAY);
+		return this.body.render("p-ammo.png");
+	}
+
+	void onPickup(Player pl) {
+		pl.addAmmo(Pistol.INV, this.amount);
 	}
 }

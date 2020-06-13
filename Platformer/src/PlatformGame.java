@@ -8,28 +8,64 @@ class PlatformGame {
 	ArrayList<IEnvironment> ground;
 	ArrayList<IWeaponEffect> weaponEffects;
 	ArrayList<IEnemy> enemies;
-	ArrayList<IGameComponent> items;
+	ArrayList<AItem> items;
 	
 	PlatformGame() {
-		this.player = new Player(new Vector2D(10, 350));
+		this.player = new Player(new Vector2D(5, 75).scaleByComponent(IConstant.BLOCK_DIM));
 		
 		EnvironmentGenerator gb = new EnvironmentGenerator();
 		
-		ground = new ArrayList<>();
-		ground.add(gb.line(new Posn(0, 60), true, 100));
-		ground.add(gb.line(new Posn(22, 53), true, 5));
-		ground.add(gb.line(new Posn(50, 55), true, 10));
-
-		ground.add(gb.line(new Posn(0, 0), false, 100));
-		ground.add(new Spikes(new Posn(20, 59), Direction.UP, 10));
-		
+		this.ground = new ArrayList<>();
 		this.weaponEffects = new ArrayList<>();
 		this.enemies = new ArrayList<>();
-		this.enemies.add(new MeleeEnemy(new Posn(70, 57), new Posn(90, 57)));
-		
 		this.items = new ArrayList<>();
-		this.items.add(new PistolAmmo(new Posn(55, 54), 5));
-		this.enemies.add(new SentryTurret(new Posn(50, 10)));
+
+		// Box around edge
+		this.ground.add(gb.line(new Posn(0, 79), true, 120));
+		this.ground.add(gb.line(new Posn(0, 0), true, 120));
+		this.ground.add(gb.line(new Posn(0, 0), false, 100));
+		this.ground.add(gb.line(new Posn(119, 0), false, 100));
+		
+		// Ceiling of section, initial floor and ceiling spikes a bit separated
+		this.ground.add(gb.line(new Posn(0, 67), true, 112));
+		this.ground.add(new Spikes(new Posn(20, 78), Direction.UP, 5));
+		this.ground.add(new Spikes(new Posn(35, 68), Direction.DOWN, 5));
+
+		this.enemies.add(new MeleeEnemy(new Posn(30, 76), new Posn(48, 76)));
+		
+		
+		// Thick rectangle with left and partial-top spikes
+		this.ground.add(gb.rectangle(new Posn(60, 75), new Posn(5, 4)));
+		this.ground.add(new Spikes(new Posn(59, 75), Direction.LEFT, 4));
+		this.ground.add(new Spikes(new Posn(60, 74), Direction.UP, 1));
+		
+		// Enemy after spike rectangle
+		this.enemies.add(new MeleeEnemy(new Posn(70, 76), new Posn(90, 76)));
+		
+		// Line for jump up to next section, sentry turret below line
+		this.ground.add(gb.line(new Posn(116, 74), true, 3));
+		this.enemies.add(new SentryTurret(new Posn(117, 75)));
+
+		// Next section, small box with top-right opening
+		this.ground.add(gb.line(new Posn(90, 42), false, 25));
+		this.ground.add(gb.line(new Posn(87, 36), true, 32));
+		
+		// Steps up through box
+		this.ground.add(gb.line(new Posn(90, 60), true, 3));
+		this.ground.add(gb.line(new Posn(100, 53), true, 3));
+		this.ground.add(gb.line(new Posn(87, 42), true, 3));
+		this.ground.add(gb.line(new Posn(90, 46), true, 3));
+
+		this.enemies.add(new MeleeEnemy(new Posn(93, 64), new Posn(105, 64)));
+		
+		this.enemies.add(new SentryTurret(new Posn(110, 37)));
+		
+		this.ground.add(gb.line(new Posn(110, 48), true, 6));
+		this.ground.add(new Spikes(new Posn(110, 47), Direction.UP, 1));
+
+		this.items.add(new PistolAmmo(new Posn(114, 47), 3));
+
+
 	}
 	
 	// Draws the current state of the game onto the background

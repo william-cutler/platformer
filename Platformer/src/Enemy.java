@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.util.ArrayList;
 
+import javalib.worldimages.FromFileImage;
 import javalib.worldimages.Posn;
 import javalib.worldimages.WorldImage;
 
@@ -16,19 +17,20 @@ interface IEnemy extends IGameComponent {
 // To represent a basic enemy that hurts player if touched and moves between two points
 class MeleeEnemy extends AGameComponent implements IEnemy {
 	BlockOscillation bo;
-	boolean isDead;
+	Health health;
 	
 	// Given starting block and finish block, initializes this with collision body at initial position
 	MeleeEnemy(Posn start, Posn finish) {
 		super(new Util().topLFromBlock(start), Player.DIM);
 		this.bo = new BlockOscillation(new Util().topLFromBlock(start), 
-				new Util().topLFromBlock(finish), Player.HORIZ_SPEED / 9);
-		this.isDead = false;
+				new Util().topLFromBlock(finish), Player.HORIZ_SPEED / 11);
+		this.health = new Health(2);
 	}
 
 	// Renders this as a red rectangle
 	WorldImage render() {
-		return this.body.render(Color.RED);
+		String fname = this.bo.direction().x > 0 ? "enemy.png" : "enemy-l.png";
+		return this.body.render(fname);
 	}
 	
 	// Ticks this enemy by moving and then updating collision body
@@ -40,12 +42,12 @@ class MeleeEnemy extends AGameComponent implements IEnemy {
 	
 	// Should remove this enemy if it is dead
 	public boolean shouldRemove() {
-		return this.isDead;
+		return this.health.dead();
 	}
 	
 	// Kills player
 	public void reduceHealth(int amt) {
-		this.isDead = true;
+		this.health = this.health.changeCurrent(- amt);
 	}
 	
 	// Reduces player health by 1 if collision
@@ -75,7 +77,7 @@ class SentryTurret extends AGameComponent implements IEnemy {
 
 	// Renders this as a red rectangle
 	WorldImage render() {
-		return this.body.render(Color.DARK_GRAY);
+		return this.body.render("turret.png");
 	}
 	
 	// Ticks this' reload if bullet is not ready
